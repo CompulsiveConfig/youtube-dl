@@ -501,6 +501,7 @@ from .ivi import (
 )
 from .ivideon import IvideonIE
 from .iwara import IwaraIE
+from .iwara import IwaraPlaylistIE
 from .izlesene import IzleseneIE
 from .jamendo import (
     JamendoIE,

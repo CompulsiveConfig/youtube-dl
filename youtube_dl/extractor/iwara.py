@@ -97,3 +97,28 @@ class IwaraIE(InfoExtractor):
             'age_limit': age_limit,
             'formats': formats,
         }
+
+class IwaraPlaylistIE(InfoExtractor):
+    _VALID_URL = r'https?://(?:www\.|ecchi\.)?iwara\.tv/playlist/[^\s\\]+'
+
+    _TEST = {
+        'url': 'https://ecchi.iwara.tv/playlist/testplaylist',
+        'title': 'testplaylist',
+        'id': '707704',
+        'uploader': 'iwaratestaccount',
+        'uploader_id': '860558',
+        'info_dict': [
+            {
+                'id':     'm6q0virrxns8nwyd8',
+                'title':  '【Ray-MMD】CALL ME CALL ME [4K] / TDA_HAKU',
+            },
+            {
+                'id':     '9oj8zcw0nziz4qrwm',
+                'title':  '涼宮ハルヒの疑心暗鬼',
+            },
+        ],
+        'playlist_count': 2,
+    }
+
+    def _real_extract(self, url):
+        return []
