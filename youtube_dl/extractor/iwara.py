@@ -1,6 +1,8 @@
 # coding: utf-8
 from __future__ import unicode_literals
 
+import re
+
 from .common import InfoExtractor
 from ..compat import compat_urllib_parse_urlparse
 from ..utils import (
@@ -98,6 +100,7 @@ class IwaraIE(InfoExtractor):
             'formats': formats,
         }
 
+
 class IwaraPlaylistIE(InfoExtractor):
     _VALID_URL = r'https?://(?:www\.|ecchi\.)?iwara\.tv/playlist/(?P<id>[^\s\\]+)'
 
@@ -107,7 +110,7 @@ class IwaraPlaylistIE(InfoExtractor):
             'id': 'testplaylist',
             # Unique shortlink
             'display_id': '707704',
-            'title': 'testplaylist',
+            'title': 'TestPlaylist',
             'uploader': 'iwaratestaccount',
             'uploader_id': '860558',
         },
@@ -118,14 +121,28 @@ class IwaraPlaylistIE(InfoExtractor):
         playlist_id = self._match_id(url)
         webpage = self._download_webpage(url, playlist_id)
 
-        entries = []
+        # For lack of API, extract playlist information directly from webpage
+        short_id = self._html_search_regex(r'/node/(\d+)', webpage, 'short_id')
+        username = self._html_search_regex(r'views-field-name.*<h2>(.+)</h2>', webpage, 'username')
+        user_id = self._html_search_regex(r'data-uid=\"(\d+)\"', webpage, 'user_id')
+        title = self._html_search_regex(r'<title>(.+?) \| Iwara</title>', webpage, 'title')
+
+        entries = [{
+            '_type': 'url',
+            'ie_key': IwaraIE.ie_key(),
+            'id': entry_info.group('id'),
+            'title': entry_info.group('video_title'),
+            'url': ('https://www.iwara.tv/videos/%s' % entry_info.group('id')),
+        } for entry_info in re.finditer(
+            r'<h3 class=\"title\">\s*.*videos\/(?P<id>\w+).+?\>(?P<video_title>.*)</a></h3>',
+            webpage)]
 
         return {
-        '_type': 'playlist',
-        'id': playlist_id,
-        'display_id': '',
-        'title': self._html_search_regex(r'<title>(.+?) \| Iwara</title>', webpage, 'title'),
-        'uploader': '',
-        'uploader_id': '',
-        'entries': entries,
+            '_type': 'playlist',
+            'id': playlist_id,
+            'display_id': short_id,
+            'title': title,
+            'uploader': username,
+            'uploader_id': user_id,
+            'entries': entries,
         }
