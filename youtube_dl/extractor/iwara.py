@@ -34,6 +34,7 @@ class IwaraIE(InfoExtractor):
             'age_limit': 18,
         },
         'add_ie': ['GoogleDrive'],
+        'skip': 'This video is unavailable',
     }, {
         'url': 'http://www.iwara.tv/videos/nawkaumd6ilezzgq',
         # md5 is unstable
@@ -48,6 +49,15 @@ class IwaraIE(InfoExtractor):
             'uploader_id': 'UCVOFyOSCyFkXTYYHITtqB7A',
         },
         'add_ie': ['Youtube'],
+    }, {
+        'url': 'https://ecchi.iwara.tv/videos/aeqwwtzqbdc79zrxk',
+        'info_dict': {
+            'id': 'aeqwwtzqbdc79zrxk',
+            'ext': 'mp4',
+            'title': 'Come And Get it【時崎狂三with紳士ハンド】ツインテ差分',
+            'age_limit': 18,
+        },
+        'skip': 'This video is private',
     }]
 
     def _real_extract(self, url):
