@@ -188,3 +188,41 @@ class IwaraPlaylistIE(InfoExtractor):
             'uploader_id': user_id,
             'entries': entries,
         }
+
+
+class IwaraFavoritesIE(InfoExtractor):
+    _VALID_URL = r'https?://(?:www\.|ecchi\.)?iwara\.tv/user/liked'
+    _NETRC_MACHINE = 'iwara'
+    _LOGIN_URL = 'https://iwara.tv/user/login'
+
+    def _real_initialize(self):
+        IwaraIE._login(self)
+
+    def _real_extract(self, url):
+        playlist_id = 'Liked Videos'
+        webpage = self._download_webpage(url, playlist_id)
+
+        if not re.search(r'href=\"/user/logout\"', webpage):
+            self.raise_login_required('You must be logged-in to access Liked videos')
+
+        username, password = IwaraIE._get_login_info(self)
+        user_id = self._html_search_regex(r'/user/(\d+)/playlists', webpage, 'user_id')
+
+        entries = [{
+            '_type': 'url',
+            'ie_key': IwaraIE.ie_key(),
+            'id': entry_info.group('id'),
+            'title': entry_info.group('video_title'),
+            'url': ('https://www.iwara.tv/videos/%s' % entry_info.group('id')),
+        } for entry_info in re.finditer(
+            r'<h3 class=\"title\">\s*.*videos\/(?P<id>\w+).+?\>(?P<video_title>.*)</a></h3>',
+            webpage)]
+
+        return {
+            '_type': 'playlist',
+            'id': playlist_id,
+            'title': username + '\'s Liked Videos',
+            'uploader': username,
+            'uploader_id': user_id,
+            'entries': entries,
+        }
