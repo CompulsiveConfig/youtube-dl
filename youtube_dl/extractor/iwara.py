@@ -10,11 +10,15 @@ from ..utils import (
     mimetype2ext,
     remove_end,
     url_or_none,
+    urlencode_postdata,
+    sanitized_Request,
 )
 
 
 class IwaraIE(InfoExtractor):
     _VALID_URL = r'https?://(?:www\.|ecchi\.)?iwara\.tv/videos/(?P<id>[a-zA-Z0-9]+)'
+    _LOGIN_URL = 'https://iwara.tv/user/login'
+    _NETRC_MACHINE = 'iwara'
     _TESTS = [{
         'url': 'http://iwara.tv/videos/amVwUl1EHpAD9RD',
         # md5 is unstable
@@ -59,6 +63,34 @@ class IwaraIE(InfoExtractor):
         },
         'skip': 'This video is private',
     }]
+
+
+    def _login(self):
+        username, password = self._get_login_info()
+        # No authentication to be performed
+        if not username or not password:
+            return
+
+        self.report_login()
+
+        login_form = {
+            'name': username,
+            'pass': password,
+            'form_id': 'user_login'
+        }
+
+
+        payload = urlencode_postdata(login_form)
+        request = sanitized_Request(self._LOGIN_URL, payload)
+        login_page = self._download_webpage(
+            request, None, errnote='Unable to perform login request', fatal=False)
+
+        if not re.search(r'href=\"/user/logout\"', login_page):
+            self.report_warning('Login failed: bad username or password')
+
+
+    def _real_initialize(self):
+        self._login()
 
     def _real_extract(self, url):
         video_id = self._match_id(url)
