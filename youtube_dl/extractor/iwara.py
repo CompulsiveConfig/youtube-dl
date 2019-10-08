@@ -176,7 +176,7 @@ class IwaraPlaylistIE(InfoExtractor):
             'title': entry_info.group('video_title'),
             'url': ('https://www.iwara.tv/videos/%s' % entry_info.group('id')),
         } for entry_info in re.finditer(
-            r'<h3 class=\"title\">\s*.*videos\/(?P<id>\w+).+?\>(?P<video_title>.*)</a></h3>',
+            r'<h3 class=\"title\">\s*.*videos\/(?P<id>\w+).+?\>(?P<video_title>.*)<\/a><\/h3>',
             webpage)]
 
         return {
@@ -191,6 +191,8 @@ class IwaraPlaylistIE(InfoExtractor):
 
 
 class IwaraFavoritesIE(InfoExtractor):
+    # Does not currently support downloading particular playlist pages
+    # Ignores image galleries within playlist
     _VALID_URL = r'https?://(?:www\.|ecchi\.)?iwara\.tv/user/liked'
     _NETRC_MACHINE = 'iwara'
     _LOGIN_URL = 'https://iwara.tv/user/login'
@@ -200,13 +202,26 @@ class IwaraFavoritesIE(InfoExtractor):
 
     def _real_extract(self, url):
         playlist_id = 'Liked Videos'
-        webpage = self._download_webpage(url, playlist_id)
+        webpage = self._download_webpage(url, playlist_id, note='Downloading playlist page #1')
 
         if not re.search(r'href=\"/user/logout\"', webpage):
             self.raise_login_required('You must be logged-in to access Liked videos')
 
         username, password = IwaraIE._get_login_info(self)
         user_id = self._html_search_regex(r'/user/(\d+)/playlists', webpage, 'user_id')
+
+        # Grab all playlist pages before proceeding
+        # For parsing purposes, concatenation seems appropriate
+        lastpage = self._html_search_regex(r'class=["\'](.*pager-last.*|.*last.*)["\'].*href=["\'].*page=(?P<lastpage>\d+)["\']', webpage, 'lastpage', group='lastpage')
+
+        # First page is already downloaded
+        webpage_concat = webpage
+
+        # The page urls are one ahead of the actual page
+        # ?page=1 for page 2, etc.
+        for pagenum in range(1, (int(lastpage) + 1)):
+            # Clean up url
+            webpage_concat = webpage_concat + self._download_webpage('https://ecchi.iwara.tv/user/liked?page=' + str(pagenum), playlist_id, note='Downloading playlist page #' + str(pagenum + 1))
 
         entries = [{
             '_type': 'url',
@@ -215,8 +230,8 @@ class IwaraFavoritesIE(InfoExtractor):
             'title': entry_info.group('video_title'),
             'url': ('https://www.iwara.tv/videos/%s' % entry_info.group('id')),
         } for entry_info in re.finditer(
-            r'<h3 class=\"title\">\s*.*videos\/(?P<id>\w+).+?\>(?P<video_title>.*)</a></h3>',
-            webpage)]
+            r'<h3 class=\"title\">\s*.*videos\/(?P<id>\w+).+?\>(?P<video_title>.*)<\/a><\/h3>',
+            webpage_concat)]
 
         return {
             '_type': 'playlist',
