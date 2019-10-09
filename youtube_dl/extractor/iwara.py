@@ -114,7 +114,15 @@ class IwaraIE(InfoExtractor):
             }
 
         title = remove_end(self._html_search_regex(
-            r'<title>([^<]+)</title>', webpage, 'title'), ' | Iwara')
+            r'<title>([^<]+)<\/title>', webpage, 'title'), ' | Iwara')
+
+        short_id = self._html_search_regex(r'\/node\/(\d+)', webpage, 'short_id')
+
+        username = self._html_search_regex(
+            r'username(\"|\')>(?P<username>.*)<\/a>', webpage, 'username', group='username')
+
+        # If the video is SFW, the channel provided will be SFW
+        user_url = ('https://iwara.tv/users/' + username) if age_limit == 0 else ('https://ecchi.iwara.tv/users/' + username)
 
         formats = []
         for a_format in video_data:
@@ -138,12 +146,17 @@ class IwaraIE(InfoExtractor):
         return {
             'id': video_id,
             'title': title,
+            'display_id': short_id,
+            'uploader': username,
+            'uploader_url': user_url,
             'age_limit': age_limit,
             'formats': formats,
         }
 
 
 class IwaraPlaylistIE(InfoExtractor):
+    # Playlist ignores age restrictions. R18 content is visible without using "ecchi" domain.
+    # Therefore, the extractor also ignores the distinction
     _VALID_URL = r'https?://(?:www\.|ecchi\.)?iwara\.tv/playlist/(?P<id>[^\s\\]+)'
 
     _TEST = {
